@@ -1,0 +1,52 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Audio Broadcast</title>
+    <script src="/socket.io/socket.io.js"></script>
+</head>
+<body>
+    <h1>Audio Broadcast via WebRTC</h1>
+    <button id="start">Démarrer</button>
+    <audio id="audioPlayback" controls autoplay></audio>
+
+    <script>
+        const socket = io();
+        const audioContext = new (window.AudioContext || window.webkitAudioContext)();
+        const mediaStreamConstraints = { audio: true };
+        
+        let mediaRecorder;
+
+        document.getElementById('start').onclick = async () => {
+            const stream = await navigator.mediaDevices.getUserMedia(mediaStreamConstraints);
+            mediaRecorder = new MediaRecorder(stream, {
+                mimeType: 'audio/webm'
+            });
+
+            mediaRecorder.ondataavailable = (event) => {
+                if (event.data.size > 0) {
+                    socket.emit('audio', event.data);
+                }
+            };
+
+            mediaRecorder.start(500); // Envoi des trames toutes les 500ms
+        };
+
+        socket.on('audio', function(data) {
+            const audioContext = new (window.AudioContext || window.webkitAudioContext)();
+
+            // Convertir les données en fichier audio et jouer
+            const buffer = new Uint8Array(data);
+            const audioBuffer = audioContext.createBuffer(1, buffer.length, audioContext.sampleRate);
+            audioBuffer.getChannelData(0).set(buffer);
+
+            const source = audioContext.createBufferSource();
+            source.buffer = audioBuffer;
+            source.connect(audioContext.destination);
+            source.start(0);
+        });
+
+    </script>
+</body>
+</html>
