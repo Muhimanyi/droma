@@ -1,0 +1,94 @@
+<!DOCTYPE html>
+<html lang="fr">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>Planificateur d'Activités</title>
+  <!-- CSS Tailwind -->
+  <link href="tailwindcss.css" rel="stylesheet">
+  <!-- JS SortableJS -->
+  <script src="sortable.js"></script>
+  <!-- JS jQuery -->
+  <script src="jquery.js"></script>
+  <style>
+    body {
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      height: 100vh;
+      background-color: #f3f4f6
+    }
+
+    .container {
+      width: 100%;
+      max-width: 800px;
+      background-color: #fff;
+      padding: 20px;
+      border-radius: 8px;
+      box-shadow: 0 4px 6px rgba(0, 0, 0, .1)
+    }
+
+    .drag {
+      cursor: move
+    }
+
+    .error {
+      color: red;
+      font-size: 12px
+    }
+  </style>
+</head>
+
+<body>
+  <!-- Container principal -->
+  <div class="container">
+    <!-- Header -->
+    <div class="text-center mb-10">
+      <h1 class="text-4xl font-bold text-blue-600">Planificateur de Fête</h1>
+      <p class="text-xl text-gray-600">Planifiez et gérez les activités de votre événement</p>
+    </div>
+    <!-- Section activités -->
+    <div class="flex justify-between mb-5">
+      <h2 class="text-2xl font-semibold text-gray-800">Activités</h2><button id="addActivityBtn"
+        class="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500">Ajouter
+        une Activité</button>
+    </div>
+    <!-- Liste triable -->
+    <div id="activitiesList" class="space-y-4" data-sortable></div>
+    <!-- Bouton sauvegarde -->
+    <button id="saveToLocalStorageBtn"
+      class="bg-green-600 text-white px-4 py-2 rounded-lg hover:bg-green-500 focus:outline-none focus:ring-2 focus:ring-green-500 mt-5 hidden">Enregistrer
+      la suite d'événements</button>
+  </div>
+  <!-- Modal suppression -->
+  <div id="deleteConfirmationModal"
+    class="fixed inset-0 bg-gray-800 bg-opacity-50 flex items-center justify-center hidden">
+    <div class="bg-white p-6 rounded-lg shadow-lg max-w-md w-full">
+      <h3 class="text-xl font-semibold text-gray-800">Êtes-vous sûr de vouloir supprimer cette activité ?</h3>
+      <div class="flex justify-end mt-4"><button id="cancelDeleteBtn"
+          class="bg-gray-300 text-gray-800 px-4 py-2 rounded-lg mr-2">Annuler</button><button id="confirmDeleteBtn"
+          class="bg-red-600 text-white px-4 py-2 rounded-lg">Confirmer</button></div>
+    </div>
+  </div>
+  <!-- Modal ajout/modification -->
+  <div id="activityModal" class="fixed inset-0 bg-gray-800 bg-opacity-50 flex items-center justify-center hidden">
+    <div class="bg-white p-6 rounded-lg shadow-lg max-w-md w-full">
+      <h3 class="text-xl font-semibold text-gray-800" id="modalTitle">Ajouter une Activité</h3>
+      <div class="mt-4"><label for="activityName" class="block text-sm text-gray-600">Nom de l'activité</label><input
+          type="text" id="activityName" class="mt-2 p-2 w-full border border-gray-300 rounded-md" required><label
+          for="activityStart" class="block text-sm text-gray-600 mt-4">Heure de début</label><input type="time"
+          id="activityStart" class="mt-2 p-2 w-full border border-gray-300 rounded-md"><label for="activityEnd"
+          class="block text-sm text-gray-600 mt-4">Heure de fin</label><input type="time" id="activityEnd"
+          class="mt-2 p-2 w-full border border-gray-300 rounded-md">
+        <div id="timeError" class="error hidden">L'heure de fin doit être supérieure à l'heure de début.</div>
+        <div class="flex justify-end mt-4"><button id="saveActivityBtn"
+            class="bg-blue-600 text-white px-4 py-2 rounded-lg">Enregistrer</button><button id="closeModalBtn"
+            class="ml-2 bg-gray-300 text-gray-800 px-4 py-2 rounded-lg">Fermer</button></div>
+      </div>
+    </div>
+  </div>
+  <script>$(document).ready(function () { let e = [], t = -1; function i() { e.sort(function (e, t) { return new Date("1970-01-01T" + e.start + ":00") - new Date("1970-01-01T" + t.start + ":00") }), $("#activitiesList").empty(), e.forEach((e, t) => { $("#activitiesList").append(`<div class="bg-white p-4 rounded-lg shadow-md flex items-center justify-between" data-index="${t}"><div class="text-left"><h3 class="text-lg font-semibold text-gray-800">${e.name}</h3><p class="text-sm text-gray-600">De ${e.start} à ${e.end}</p></div><div class="flex space-x-2"><button class="editActivityBtn bg-yellow-500 text-white px-4 py-2 rounded-lg hover:bg-yellow-400">Modifier</button><button class="deleteActivityBtn bg-red-600 text-white px-4 py-2 rounded-lg hover:bg-red-500">Supprimer</button></div></div>`) }), e.length > 0 ? $("#saveToLocalStorageBtn").removeClass("hidden") : $("#saveToLocalStorageBtn").addClass("hidden") } $("#addActivityBtn").click(function () { $("#modalTitle").text("Ajouter une Activité"), $("#activityName").val(""), $("#activityStart").val(""), $("#activityEnd").val(""), $("#timeError").addClass("hidden"), $("#activityModal").show(), $("#saveActivityBtn").show() }), $("#saveActivityBtn").click(function () { const t = $("#activityName").val(), a = $("#activityStart").val(), n = $("#activityEnd").val(); if (new Date("1970-01-01T" + a + ":00") >= new Date("1970-01-01T" + n + ":00")) return void $("#timeError").removeClass("hidden"); t && a && n ? (e.push({ name: t, start: a, end: n }), i(), $("#activityModal").hide()) : alert("Veuillez remplir tous les champs.") }), $("#closeModalBtn").click(function () { $("#activityModal").hide() }), $(document).on("click", ".editActivityBtn", function () { t = $(this).closest(".bg-white").data("index"); const i = e[t]; $("#modalTitle").text("Modifier l'Activité"), $("#activityName").val(i.name), $("#activityStart").val(i.start), $("#activityEnd").val(i.end), $("#timeError").addClass("hidden"), $("#activityModal").show() }), $(document).on("click", ".deleteActivityBtn", function () { t = $(this).closest(".bg-white").data("index"), $("#deleteConfirmationModal").show() }), $("#confirmDeleteBtn").click(function () { t > -1 && (e.splice(t, 1), i()), $("#deleteConfirmationModal").hide() }), $("#cancelDeleteBtn").click(function () { $("#deleteConfirmationModal").hide() }), new Sortable(document.getElementById("activitiesList"), { animation: 150, onEnd(t) { const a = e.splice(t.oldIndex, 1)[0]; e.splice(t.newIndex, 0, a); const n = new Date("1970-01-01T" + e[0].start + ":00"); e.forEach((e, t) => { const i = new Date(n.getTime() + 60 * t * 60 * 1e3); e.start = i.toTimeString().substr(0, 5), e.end = new Date(i.getTime() + 36e5).toTimeString().substr(0, 5) }), i() } }), $("#saveToLocalStorageBtn").click(function () { localStorage.setItem("activities", JSON.stringify(e)), alert("Les activités ont été enregistrées dans le localStorage") }); const a = localStorage.getItem("activities"); a && (e = JSON.parse(a), i()) });</script>
+</body>
+
+</html>
